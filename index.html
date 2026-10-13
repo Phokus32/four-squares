@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111318">
+  <meta name="description" content="A simple tap-to-toggle four square game.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Four Squares</title>
+  <style>
+    :root { color-scheme: dark; --bg:#111318; --panel:#1b1e25; --dim:#303540; --dim-border:#4a5060; --lit:#facc15; --lit-border:#fef08a; }
+    * { box-sizing:border-box; }
+    html, body { margin:0; min-height:100%; background:var(--bg); color:#f4f5f7; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    body { min-height:100svh; display:flex; justify-content:center; padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom)); }
+    main { width:min(100%, 520px); display:flex; flex-direction:column; gap:22px; }
+    header { text-align:center; padding-top:10px; }
+    h1 { margin:0; font-size:clamp(1.8rem, 8vw, 2.5rem); letter-spacing:.08em; font-weight:850; }
+    .subtitle { color:#aeb4c0; margin:8px 0 0; font-size:1rem; }
+    .board { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; width:100%; }
+    .square { appearance:none; -webkit-tap-highlight-color:transparent; border:2px solid var(--dim-border); border-radius:24px; aspect-ratio:1; min-height:0; background:var(--dim); color:#e5e7eb; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; cursor:pointer; touch-action:manipulation; transition:background .13s ease,border-color .13s ease,transform .08s ease,box-shadow .13s ease; user-select:none; }
+    .square:active { transform:scale(.975); }
+    .square:focus-visible, .reset:focus-visible { outline:3px solid #93c5fd; outline-offset:4px; }
+    .square .symbol { font-size:clamp(2rem, 11vw, 3.5rem); line-height:1; opacity:.65; }
+    .square .state { font-size:clamp(1.1rem, 5vw, 1.45rem); font-weight:800; letter-spacing:.08em; }
+    .square.lit { background:var(--lit); border-color:var(--lit-border); color:#713f12; box-shadow:0 0 28px rgba(250,204,21,.17), inset 0 0 0 1px rgba(255,255,255,.14); }
+    .square.lit .symbol { opacity:1; }
+    .footer { display:flex; align-items:center; justify-content:space-between; gap:12px; color:#aeb4c0; font-size:.95rem; }
+    .reset { border:1px solid #555b68; border-radius:999px; padding:12px 16px; background:transparent; color:#f4f5f7; font:inherit; font-weight:650; cursor:pointer; touch-action:manipulation; }
+    .reset:active { background:#272b34; }
+    .hint { color:#777f8d; text-align:center; font-size:.82rem; margin-top:auto; padding-top:4px; }
+    @media (max-height:650px) { main { gap:14px; } .board { gap:10px; } .square { border-radius:18px; } header { padding-top:0; } }
+    @media (prefers-reduced-motion:reduce) { .square { transition:none; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>FOUR SQUARES</h1>
+      <p class="subtitle">Tap to turn on. Tap again to turn off.</p>
+    </header>
+    <section class="board" aria-label="Four independently controlled squares">
+      <button class="square" type="button" aria-pressed="false" aria-label="Square 1, off"><span class="symbol" aria-hidden="true">○</span><span class="state">OFF</span></button>
+      <button class="square" type="button" aria-pressed="false" aria-label="Square 2, off"><span class="symbol" aria-hidden="true">○</span><span class="state">OFF</span></button>
+      <button class="square" type="button" aria-pressed="false" aria-label="Square 3, off"><span class="symbol" aria-hidden="true">○</span><span class="state">OFF</span></button>
+      <button class="square" type="button" aria-pressed="false" aria-label="Square 4, off"><span class="symbol" aria-hidden="true">○</span><span class="state">OFF</span></button>
+    </section>
+    <div class="footer">
+      <span id="count" aria-live="polite">0 of 4 squares lit</span>
+      <button class="reset" id="reset" type="button">Reset all</button>
+    </div>
+    <p class="hint">A little game with four independent lights.</p>
+  </main>
+  <script>
+    const squares = [...document.querySelectorAll('.square')];
+    const count = document.querySelector('#count');
+    function updateCount() {
+      const litCount = squares.filter(s => s.classList.contains('lit')).length;
+      count.textContent = `${litCount} of 4 squares lit`;
+    }
+    squares.forEach((square, index) => {
+      square.addEventListener('click', () => {
+        const lit = square.classList.toggle('lit');
+        square.querySelector('.state').textContent = lit ? 'ON' : 'OFF';
+        square.querySelector('.symbol').textContent = lit ? '●' : '○';
+        square.setAttribute('aria-pressed', String(lit));
+        square.setAttribute('aria-label', `Square ${index + 1}, ${lit ? 'on' : 'off'}`);
+        updateCount();
+      });
+    });
+    document.querySelector('#reset').addEventListener('click', () => {
+      squares.forEach((square, index) => {
+        square.classList.remove('lit');
+        square.querySelector('.state').textContent = 'OFF';
+        square.querySelector('.symbol').textContent = '○';
+        square.setAttribute('aria-pressed', 'false');
+        square.setAttribute('aria-label', `Square ${index + 1}, off`);
+      });
+      updateCount();
+    });
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
